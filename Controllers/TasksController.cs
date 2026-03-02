@@ -13,9 +13,24 @@ public class TasksController : ControllerBase
         new Models.Task { Id = 2, Title = "Build a Web API", IsCompleted = false }
     };
 
+    //Get all task 
     [HttpGet]
-    public IActionResult GetTasks()
+     public ActionResult<List<Models.Task>> GetTasks()
     {
-        return Ok(_tasks);
+        return _tasks;
     }
+
+    //Get task by id
+    [HttpGet("{id}")]
+    public ActionResult<Models.Task> GetTask(int id)
+    {
+        var task = _tasks.FirstOrDefault(t => t.Id == id);
+        if (task == null)
+        {
+            return NotFound();
+        }
+        return Ok(task);
+    }
+
 }
+   
