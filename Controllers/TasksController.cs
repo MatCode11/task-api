@@ -41,4 +41,20 @@ public class TasksController : ControllerBase
         return CreatedAtAction(nameof(GetTask), new { id = newTask.Id }, newTask);
     }
 
+    //Update task
+    [HttpPut("{id}")]
+    public ActionResult UpdateTask(int id, [FromBody] Models.Task updatedTask)
+    {
+        var task = _tasks.FirstOrDefault(t => t.Id == id);
+        if (task == null)
+        {
+            return NotFound();
+        }
+        task.Title = updatedTask.Title;
+        task.Description = updatedTask.Description;
+        task.IsCompleted = updatedTask.IsCompleted;
+        task.DueDate = updatedTask.DueDate;
+        return NoContent();
+    }
+
 }
