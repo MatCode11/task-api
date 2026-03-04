@@ -15,7 +15,7 @@ public class TasksController : ControllerBase
 
     //Get all task 
     [HttpGet]
-     public ActionResult<List<Models.Task>> GetTasks()
+    public ActionResult<List<Models.Task>> GetTasks()
     {
         return _tasks;
     }
@@ -32,5 +32,13 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    //Create task
+    [HttpPost]
+    public ActionResult<Models.Task> CreateTask([FromBody] Models.Task newTask)
+    {
+        newTask.Id = _tasks.Any() ? _tasks.Max(t => t.Id) + 1 : 1;
+        _tasks.Add(newTask);
+        return CreatedAtAction(nameof(GetTask), new { id = newTask.Id }, newTask);
+    }
+
 }
-   
