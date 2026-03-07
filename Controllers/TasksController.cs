@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskApi.Models;
+using TaskApi.Services;
 
 namespace TaskApi.Controllers;
 
@@ -7,24 +8,25 @@ namespace TaskApi.Controllers;
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
 {
-    private static readonly List<Models.Task> _tasks = new()
+    private readonly ITaskService _taskService;
+
+    public TasksController(ITaskService taskService)
     {
-        new Models.Task { Id = 1, Title = "Learn ASP.NET Core", IsCompleted = false },
-        new Models.Task { Id = 2, Title = "Build a Web API", IsCompleted = false }
-    };
+        _taskService = taskService;
+    }
 
     //Get all task 
     [HttpGet]
-    public ActionResult<List<Models.Task>> GetTasks()
+    public ActionResult<List<TaskApi.Models.Task>> GetTasks()
     {
-        return _tasks;
+        return Ok(_taskService.GetAllTasks());
     }
 
     //Get task by id
     [HttpGet("{id}")]
-    public ActionResult<Models.Task> GetTask(int id)
+    public ActionResult<TaskApi.Models.Task> GetTask(int id)
     {
-        var task = _tasks.FirstOrDefault(t => t.Id == id);
+        var task = _taskService.GetTaskById(id);
         if (task == null)
         {
             return NotFound();
@@ -34,26 +36,28 @@ public class TasksController : ControllerBase
 
     //Create task
     [HttpPost]
-    public ActionResult<Models.Task> CreateTask([FromBody] Models.Task newTask)
+    public ActionResult<TaskApi.Models.Task> CreateTask([FromBody] TaskApi.Models.Task newTask)
     {
-        newTask.Id = _tasks.Any() ? _tasks.Max(t => t.Id) + 1 : 1;
-        _tasks.Add(newTask);
-        return CreatedAtAction(nameof(GetTask), new { id = newTask.Id }, newTask);
+        var createdTask = _taskService.CreateTask(newTask);
+        return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
     }
 
     //Update task
     [HttpPut("{id}")]
-    public ActionResult UpdateTask(int id, [FromBody] Models.Task updatedTask)
+    public ActionResult UpdateTask(int id, [FromBody] TaskApi.Models.Task updatedTask)
     {
-        var task = _tasks.FirstOrDefault(t => t.Id == id);
-        if (task == null)
+        if (id != updatedTask.Id)
+        {
+            return BadRequest();
+        }
+
+        var existingTask = _taskService.GetTaskById(id);
+        if (existingTask == null)
         {
             return NotFound();
         }
-        task.Title = updatedTask.Title;
-        task.Description = updatedTask.Description;
-        task.IsCompleted = updatedTask.IsCompleted;
-        task.DueDate = updatedTask.DueDate;
+        
+        _taskService.UpdateTask(updatedTask);
         return NoContent();
     }
 
@@ -61,14 +65,13 @@ public class TasksController : ControllerBase
     [HttpDelete("{id}")]
     public ActionResult DeleteTask(int id)
     {
-        var task = _tasks.FirstOrDefault(t => t.Id == id);
-        if (task == null)
+        var existingTask = _taskService.GetTaskById(id);
+        if (existingTask == null)
         {
             return NotFound();
         }
-        _tasks.Remove(task);
+
+        _taskService.DeleteTask(id);
         return NoContent();
     }
-
-    
 }
