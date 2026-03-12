@@ -1,0 +1,5 @@
+Day 1 — Project + Pipeline Basics
+
+- Set up the Web API so controllers can handle requests: AddControllers() + MapControllers() in Program.cs .
+- Learned the “order rule”: register services on builder.Services before builder.Build() .
+- Understood the pipeline at a high level: request comes in → middleware runs → controller endpoint runs → response.

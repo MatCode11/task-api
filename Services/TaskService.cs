@@ -4,6 +4,8 @@ namespace TaskApi.Services;
 
 public class TaskService : ITaskService
 {
+    public string InstanceId { get; } = Guid.NewGuid().ToString("N");
+
     private static readonly List<TaskApi.Models.Task> _tasks = new()
     {
         new TaskApi.Models.Task { Id = 1, Title = "Learn ASP.NET Core", IsCompleted = false },

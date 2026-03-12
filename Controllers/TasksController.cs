@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using TaskApi.Models;
 using TaskApi.Services;
 
@@ -13,6 +14,22 @@ public class TasksController : ControllerBase
     public TasksController(ITaskService taskService)
     {
         _taskService = taskService;
+    }
+
+    [HttpGet("di")]
+    public ActionResult GetDiInfo()
+    {
+        var resolved1 = HttpContext.RequestServices.GetRequiredService<ITaskService>();
+        var resolved2 = HttpContext.RequestServices.GetRequiredService<ITaskService>();
+
+        return Ok(new
+        {
+            injectedInstanceId = _taskService.InstanceId,
+            resolved1InstanceId = resolved1.InstanceId,
+            resolved2InstanceId = resolved2.InstanceId,
+            resolvedSameInstance = ReferenceEquals(resolved1, resolved2),
+            requestTraceId = HttpContext.TraceIdentifier
+        });
     }
 
     [HttpGet]

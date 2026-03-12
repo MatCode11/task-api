@@ -1,0 +1,15 @@
+## Week 2 Day 2 — What we’re learning (goal first)
+Goal: make DI lifetimes real , not just words.
+
+We’re going to answer this with proof:
+
+- When I register a service as Transient / Scoped / Singleton , how many instances get created and when ?
+### Expected observations
+- Scoped (per request):
+  - Inside 1 request, resolving ITaskService twice gives the same instance .
+  - Across two separate HTTP calls, you get different instances .
+- Transient (every resolve):
+  - Inside 1 request, resolving twice gives two different instances .
+- Singleton (one for app lifetime):
+  - Inside 1 request: same instance
+  - Across many requests: same instance
