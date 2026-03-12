@@ -1,0 +1,18 @@
+Models
+    -
+
+Controllers
+    - 
+
+Services
+    IService
+        -
+    Services
+        -
+
+
+
+#Middleware
+    -checkpoint your request passes through on the way to your controller.
+#IEnumerable
+    -

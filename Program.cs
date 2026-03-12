@@ -16,10 +16,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+//Middleware for http
 app.UseHttpsRedirection();
 
+//Routing
 app.MapControllers();
 
+//Runs the api
 app.Run();
 
 

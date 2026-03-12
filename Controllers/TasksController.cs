@@ -15,14 +15,12 @@ public class TasksController : ControllerBase
         _taskService = taskService;
     }
 
-    //Get all task 
     [HttpGet]
-    public ActionResult<List<TaskApi.Models.Task>> GetTasks()
+    public ActionResult<IEnumerable<TaskApi.Models.Task>> GetTasks()
     {
         return Ok(_taskService.GetAllTasks());
     }
 
-    //Get task by id
     [HttpGet("{id}")]
     public ActionResult<TaskApi.Models.Task> GetTask(int id)
     {
@@ -34,7 +32,6 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
-    //Create task
     [HttpPost]
     public ActionResult<TaskApi.Models.Task> CreateTask([FromBody] TaskApi.Models.Task newTask)
     {
@@ -42,26 +39,20 @@ public class TasksController : ControllerBase
         return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
     }
 
-    //Update task
     [HttpPut("{id}")]
     public ActionResult UpdateTask(int id, [FromBody] TaskApi.Models.Task updatedTask)
     {
-        if (id != updatedTask.Id)
-        {
-            return BadRequest();
-        }
-
         var existingTask = _taskService.GetTaskById(id);
         if (existingTask == null)
         {
             return NotFound();
         }
         
+        updatedTask.Id = id;
         _taskService.UpdateTask(updatedTask);
         return NoContent();
     }
 
-    //Delete task
     [HttpDelete("{id}")]
     public ActionResult DeleteTask(int id)
     {

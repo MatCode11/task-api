@@ -4,8 +4,6 @@ namespace TaskApi.Services;
 
 public class TaskService : ITaskService
 {
-    // In-memory storage (static to persist across requests for Singleton/Transient testing later)
-    // Note: In a real app with Scoped services and a DB, this wouldn't be static.
     private static readonly List<TaskApi.Models.Task> _tasks = new()
     {
         new TaskApi.Models.Task { Id = 1, Title = "Learn ASP.NET Core", IsCompleted = false },
@@ -25,6 +23,8 @@ public class TaskService : ITaskService
     public TaskApi.Models.Task CreateTask(TaskApi.Models.Task task)
     {
         task.Id = _tasks.Any() ? _tasks.Max(t => t.Id) + 1 : 1;
+        task.CreatedAt = DateTime.UtcNow;
+        task.UpdatedAt = null;
         _tasks.Add(task);
         return task;
     }
@@ -38,6 +38,7 @@ public class TaskService : ITaskService
             existingTask.Description = task.Description;
             existingTask.IsCompleted = task.IsCompleted;
             existingTask.DueDate = task.DueDate;
+            existingTask.UpdatedAt = DateTime.UtcNow;
         }
     }
 
