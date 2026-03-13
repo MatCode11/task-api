@@ -1,55 +1,82 @@
+using Microsoft.EntityFrameworkCore;
+using TaskApi.Data;
+using TaskApi.Dtos;
 using TaskApi.Models;
 
 namespace TaskApi.Services;
 
-public class TaskService : ITaskService
+public sealed class TaskService : ITaskService
 {
-    public string InstanceId { get; } = Guid.NewGuid().ToString("N");
+    private readonly AppDbContext _db;
 
-    private static readonly List<TaskApi.Models.Task> _tasks = new()
+    public TaskService(AppDbContext db)
     {
-        new TaskApi.Models.Task { Id = 1, Title = "Learn ASP.NET Core", IsCompleted = false },
-        new TaskApi.Models.Task { Id = 2, Title = "Build a Web API", IsCompleted = false }
-    };
-
-    public IEnumerable<TaskApi.Models.Task> GetAllTasks()
-    {
-        return _tasks;
+        _db = db;
     }
 
-    public TaskApi.Models.Task? GetTaskById(int id)
+    public async Task<IReadOnlyList<TaskDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return _tasks.FirstOrDefault(t => t.Id == id);
+        return await _db.Tasks
+            .AsNoTracking()
+            .OrderBy(t => t.Id)
+            .Select(t => new TaskDto(t.Id, t.Title, t.Description, t.IsCompleted, t.CreatedAt, t.UpdatedAt))
+            .ToListAsync(cancellationToken);
     }
 
-    public TaskApi.Models.Task CreateTask(TaskApi.Models.Task task)
+    public async Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        task.Id = _tasks.Any() ? _tasks.Max(t => t.Id) + 1 : 1;
-        task.CreatedAt = DateTime.UtcNow;
-        task.UpdatedAt = null;
-        _tasks.Add(task);
-        return task;
+        return await _db.Tasks
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => new TaskDto(t.Id, t.Title, t.Description, t.IsCompleted, t.CreatedAt, t.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public void UpdateTask(TaskApi.Models.Task task)
+    public async Task<TaskDto> CreateAsync(CreateTaskDto dto, CancellationToken cancellationToken)
     {
-        var existingTask = _tasks.FirstOrDefault(t => t.Id == task.Id);
-        if (existingTask != null)
+        var entity = new TaskItem
         {
-            existingTask.Title = task.Title;
-            existingTask.Description = task.Description;
-            existingTask.IsCompleted = task.IsCompleted;
-            existingTask.DueDate = task.DueDate;
-            existingTask.UpdatedAt = DateTime.UtcNow;
-        }
+            Title = dto.Title.Trim(),
+            Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+            IsCompleted = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = null
+        };
+
+        _db.Tasks.Add(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
     }
 
-    public void DeleteTask(int id)
+    public async Task<TaskDto?> UpdateAsync(int id, UpdateTaskDto dto, CancellationToken cancellationToken)
     {
-        var task = _tasks.FirstOrDefault(t => t.Id == id);
-        if (task != null)
+        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (entity is null)
         {
-            _tasks.Remove(task);
+            return null;
         }
+
+        entity.Title = dto.Title.Trim();
+        entity.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+        entity.IsCompleted = dto.IsCompleted;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
+    }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
+    {
+        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (entity is null)
+        {
+            return false;
+        }
+
+        _db.Tasks.Remove(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

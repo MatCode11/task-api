@@ -1,5 +1,0 @@
-Day 2 — GET Endpoints + Status Codes + LINQ intro
-
-- Built GET /api/tasks and GET /api/tasks/{id} in TasksController.cs .
-- Practiced correct responses: 200 OK when found, 404 NotFound when missing.
-- Used LINQ like FirstOrDefault(...) to find items by Id.

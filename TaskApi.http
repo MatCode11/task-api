@@ -14,9 +14,7 @@ Accept: application/json
 
 {
   "title": "Try .http file",
-  "description": "Created from VS Code/Visual Studio HTTP client",
-  "isCompleted": false,
-  "dueDate": null
+  "description": "Created from VS Code/Visual Studio HTTP client"
 }
 
 ###
@@ -27,8 +25,7 @@ Accept: application/json
 {
   "title": "Updated title",
   "description": "Updated via PUT",
-  "isCompleted": true,
-  "dueDate": null
+  "isCompleted": true
 }
 
 ###

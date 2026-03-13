@@ -1,4 +1,0 @@
-Day 4 — PUT + Update Rules
-
-- Built PUT /api/tasks/{id} and returned 204 NoContent on success.
-- Learned update safety: don’t change the resource Id; update fields only.

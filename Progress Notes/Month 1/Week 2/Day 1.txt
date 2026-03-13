@@ -1,7 +1,0 @@
-Day 1 — Services + DI (IoC)
-
-- Moved “work” out of the controller into a service:
-  - Contract in ITaskService.cs
-  - Implementation in TaskService.cs
-- Registered it in DI in Program.cs : AddScoped<ITaskService, TaskService>()
-- Updated the controller to use constructor injection (controller depends on the interface, not the class) in TasksController.cs .

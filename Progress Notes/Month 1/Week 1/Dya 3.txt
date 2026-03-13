@@ -1,4 +1,0 @@
-Day 3 — POST + 201 Created
-
-- Built POST /api/tasks and returned 201 Created using CreatedAtAction(...) .
-- Fixed the “empty list” Id bug by using Any() before Max() .

@@ -1,85 +1,62 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using TaskApi.Models;
+using TaskApi.Dtos;
 using TaskApi.Services;
 
 namespace TaskApi.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class TasksController : ControllerBase
+[Route("api/tasks")]
+public sealed class TasksController : ControllerBase
 {
-    private readonly ITaskService _taskService;
+    private readonly ITaskService _tasks;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(ITaskService tasks)
     {
-        _taskService = taskService;
-    }
-
-    [HttpGet("di")]
-    public ActionResult GetDiInfo()
-    {
-        var resolved1 = HttpContext.RequestServices.GetRequiredService<ITaskService>();
-        var resolved2 = HttpContext.RequestServices.GetRequiredService<ITaskService>();
-
-        return Ok(new
-        {
-            injectedInstanceId = _taskService.InstanceId,
-            resolved1InstanceId = resolved1.InstanceId,
-            resolved2InstanceId = resolved2.InstanceId,
-            resolvedSameInstance = ReferenceEquals(resolved1, resolved2),
-            requestTraceId = HttpContext.TraceIdentifier
-        });
+        _tasks = tasks;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<TaskApi.Models.Task>> GetTasks()
+    public async Task<ActionResult<IReadOnlyList<TaskDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(_taskService.GetAllTasks());
+        var items = await _tasks.GetAllAsync(cancellationToken);
+        return Ok(items);
     }
 
-    [HttpGet("{id}")]
-    public ActionResult<TaskApi.Models.Task> GetTask(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<TaskDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var task = _taskService.GetTaskById(id);
-        if (task == null)
-        {
-            return NotFound();
-        }
-        return Ok(task);
+        var item = await _tasks.GetByIdAsync(id, cancellationToken);
+        return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
-    public ActionResult<TaskApi.Models.Task> CreateTask([FromBody] TaskApi.Models.Task newTask)
+    public async Task<ActionResult<TaskDto>> Create([FromBody] CreateTaskDto dto, CancellationToken cancellationToken)
     {
-        var createdTask = _taskService.CreateTask(newTask);
-        return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
-    }
-
-    [HttpPut("{id}")]
-    public ActionResult UpdateTask(int id, [FromBody] TaskApi.Models.Task updatedTask)
-    {
-        var existingTask = _taskService.GetTaskById(id);
-        if (existingTask == null)
+        if (string.IsNullOrWhiteSpace(dto.Title))
         {
-            return NotFound();
-        }
-        
-        updatedTask.Id = id;
-        _taskService.UpdateTask(updatedTask);
-        return NoContent();
-    }
-
-    [HttpDelete("{id}")]
-    public ActionResult DeleteTask(int id)
-    {
-        var existingTask = _taskService.GetTaskById(id);
-        if (existingTask == null)
-        {
-            return NotFound();
+            return BadRequest(new { error = "Title is required." });
         }
 
-        _taskService.DeleteTask(id);
-        return NoContent();
+        var created = await _tasks.CreateAsync(dto, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<TaskDto>> Update(int id, [FromBody] UpdateTaskDto dto, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Title))
+        {
+            return BadRequest(new { error = "Title is required." });
+        }
+
+        var updated = await _tasks.UpdateAsync(id, dto, cancellationToken);
+        return updated is null ? NotFound() : Ok(updated);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var deleted = await _tasks.DeleteAsync(id, cancellationToken);
+        return deleted ? NoContent() : NotFound();
     }
 }

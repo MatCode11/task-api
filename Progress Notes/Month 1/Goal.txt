@@ -1,9 +1,0 @@
-## Month 1: Goal + What You’ll Learn
-Main goal (Month 1) Become confident building a small ASP.NET Core Web API where you understand why each piece exists, not just copy code.
-
-What you’ll be able to do by the end of Month 1
-
-- Build a correct CRUD API with proper routes and status codes.
-- Explain the request pipeline and what middleware does.
-- Use DI properly: controllers stay thin, services handle logic, and you can choose the right lifetime.
-- Debug and test endpoints even without Swagger/Postman.

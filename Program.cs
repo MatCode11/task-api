@@ -1,28 +1,47 @@
+using Microsoft.EntityFrameworkCore;
+using TaskApi.Data;
+using TaskApi.Models;
 using TaskApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseInMemoryDatabase("TaskDb");
+});
 builder.Services.AddScoped<ITaskService, TaskService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-//Middleware for http
 app.UseHttpsRedirection();
 
-//Routing
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.EnsureCreatedAsync();
+
+    if (!await db.Tasks.AnyAsync())
+    {
+        db.Tasks.AddRange(
+            new TaskItem { Title = "Learn ASP.NET Core", IsCompleted = false, CreatedAt = DateTime.UtcNow },
+            new TaskItem { Title = "Build a simple API", IsCompleted = false, CreatedAt = DateTime.UtcNow }
+        );
+        await db.SaveChangesAsync();
+    }
+}
+
+app.MapGet("/", () => Results.Ok(new { name = "Task API", status = "ok" }));
+
 app.MapControllers();
 
-//Runs the api
 app.Run();
 
 
