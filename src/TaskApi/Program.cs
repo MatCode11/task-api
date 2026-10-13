@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using TaskApi.Data;
 using TaskApi.Errors;
@@ -16,8 +17,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddScoped<ITaskService, TaskService>();
 
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod
+        | HttpLoggingFields.RequestPath
+        | HttpLoggingFields.ResponseStatusCode
+        | HttpLoggingFields.Duration;
+    options.CombineLogs = true;
+});
+
 var app = builder.Build();
 
+app.UseHttpLogging();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -30,6 +42,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGet("/", () => Results.Ok(new { name = "Task API", status = "ok" }));
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 

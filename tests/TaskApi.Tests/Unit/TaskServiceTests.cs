@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using TaskApi.Data;
 using TaskApi.Dtos;
 using TaskApi.Services;
@@ -21,7 +22,7 @@ public sealed class TaskServiceTests : IDisposable
         _db = new AppDbContext(options);
         _db.Database.Migrate();
 
-        _service = new TaskService(_db);
+        _service = new TaskService(_db, NullLogger<TaskService>.Instance);
     }
 
     public void Dispose()

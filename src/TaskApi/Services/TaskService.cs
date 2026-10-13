@@ -8,10 +8,12 @@ namespace TaskApi.Services;
 public sealed class TaskService : ITaskService
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<TaskService> _logger;
 
-    public TaskService(AppDbContext db)
+    public TaskService(AppDbContext db, ILogger<TaskService> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     public async Task<PagedResult<TaskDto>> GetPageAsync(TaskQuery query, CancellationToken cancellationToken)
@@ -87,6 +89,7 @@ public sealed class TaskService : ITaskService
 
         _db.Tasks.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Created task {TaskId}", entity.Id);
 
         return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
     }
@@ -105,6 +108,7 @@ public sealed class TaskService : ITaskService
         entity.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Updated task {TaskId} (IsCompleted: {IsCompleted})", entity.Id, entity.IsCompleted);
 
         return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
     }
@@ -119,6 +123,7 @@ public sealed class TaskService : ITaskService
 
         _db.Tasks.Remove(entity);
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Deleted task {TaskId}", id);
         return true;
     }
 }
