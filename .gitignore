@@ -73,3 +73,7 @@ Temporary Items
 *.db
 *.db-shm
 *.db-wal
+
+# Local planning and Claude Code notes
+CLAUDE.md
+PLAN.md

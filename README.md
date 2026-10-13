@@ -1,6 +1,6 @@
 # TaskApi
 
-A small ASP.NET Core (.NET 10) REST API for managing tasks, built as a backend learning project. Each user registers, logs in, and manages their own task list. See `PLAN.md` for the roadmap and progress log.
+A small ASP.NET Core (.NET 10) REST API for managing tasks, built as a backend learning project. Each user registers, logs in, and manages their own task list.
 
 ## Features
 - CRUD for tasks at `/api/tasks`, scoped to the logged-in user (another user's task returns 404)
