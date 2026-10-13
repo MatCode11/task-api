@@ -1,26 +1,73 @@
 @TaskApi_HostAddress = http://localhost:5194
+@email = alice@example.com
+# Replace with a password of your choice before sending register/login.
+@password = CHANGE_ME
 
-GET {{TaskApi_HostAddress}}/api/tasks
+### Health check (no auth)
+GET {{TaskApi_HostAddress}}/health
+
+### Register a user (password needs upper, lower, digit and symbol, 6+ chars)
+POST {{TaskApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Log in. Copy accessToken from the response into @token below.
+POST {{TaskApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@token = paste-access-token-here
+
+### List tasks (paged). All query parameters are optional.
+GET {{TaskApi_HostAddress}}/api/tasks?page=1&pageSize=20
 Accept: application/json
+Authorization: Bearer {{token}}
+
+### Filter, search and sort (sort: id, title, createdAt, updatedAt; prefix "-" for descending)
+GET {{TaskApi_HostAddress}}/api/tasks?isCompleted=false&search=api&sort=-createdAt
+Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 GET {{TaskApi_HostAddress}}/api/tasks/1
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 POST {{TaskApi_HostAddress}}/api/tasks
 Content-Type: application/json
 Accept: application/json
+Authorization: Bearer {{token}}
 
 {
   "title": "Try .http file",
   "description": "Created from VS Code/Visual Studio HTTP client"
 }
 
+### Validation error: returns a 400 ProblemDetails with field errors
+POST {{TaskApi_HostAddress}}/api/tasks
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": ""
+}
+
 ###
 PUT {{TaskApi_HostAddress}}/api/tasks/1
 Content-Type: application/json
 Accept: application/json
+Authorization: Bearer {{token}}
 
 {
   "title": "Updated title",
@@ -31,4 +78,7 @@ Accept: application/json
 ###
 DELETE {{TaskApi_HostAddress}}/api/tasks/1
 Accept: application/json
+Authorization: Bearer {{token}}
 
+### Without a token: 401
+GET {{TaskApi_HostAddress}}/api/tasks
