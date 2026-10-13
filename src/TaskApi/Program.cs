@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseInMemoryDatabase("TaskDb");
+    options.UseSqlite(builder.Configuration.GetConnectionString("TaskDb"));
 });
 builder.Services.AddScoped<ITaskService, TaskService>();
 
@@ -19,24 +19,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    await DevDataSeeder.SeedAsync(app.Services);
 }
 
 app.UseHttpsRedirection();
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.EnsureCreatedAsync();
-
-    if (!await db.Tasks.AnyAsync())
-    {
-        db.Tasks.AddRange(
-            new TaskItem { Title = "Learn ASP.NET Core", IsCompleted = false, CreatedAt = DateTime.UtcNow },
-            new TaskItem { Title = "Build a simple API", IsCompleted = false, CreatedAt = DateTime.UtcNow }
-        );
-        await db.SaveChangesAsync();
-    }
-}
 
 app.MapGet("/", () => Results.Ok(new { name = "Task API", status = "ok" }));
 

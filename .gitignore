@@ -68,3 +68,8 @@ _ReSharper*/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
