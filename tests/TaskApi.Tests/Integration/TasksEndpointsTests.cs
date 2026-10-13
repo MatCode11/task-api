@@ -23,10 +23,44 @@ public sealed class TasksEndpointsTests : IAsyncLifetime
     [Fact]
     public async Task GetAll_StartsEmpty()
     {
-        var tasks = await _client.GetFromJsonAsync<List<TaskDto>>("/api/tasks");
+        var page = await _client.GetFromJsonAsync<PagedResult<TaskDto>>("/api/tasks");
 
-        Assert.NotNull(tasks);
-        Assert.Empty(tasks);
+        Assert.NotNull(page);
+        Assert.Empty(page.Items);
+        Assert.Equal(0, page.TotalCount);
+        Assert.Equal(1, page.Page);
+        Assert.Equal(20, page.PageSize);
+    }
+
+    [Fact]
+    public async Task GetAll_PagesFiltersAndSorts()
+    {
+        for (var i = 1; i <= 5; i++)
+        {
+            await CreateTaskAsync($"Task {i}", i % 2 == 0 ? "about the API" : null);
+        }
+
+        var secondPage = await _client.GetFromJsonAsync<PagedResult<TaskDto>>("/api/tasks?page=2&pageSize=2");
+        var searched = await _client.GetFromJsonAsync<PagedResult<TaskDto>>("/api/tasks?search=api&sort=-id");
+
+        Assert.Equal(5, secondPage!.TotalCount);
+        Assert.Equal(["Task 3", "Task 4"], secondPage.Items.Select(t => t.Title));
+        Assert.Equal(2, searched!.TotalCount);
+        Assert.Equal(["Task 4", "Task 2"], searched.Items.Select(t => t.Title));
+    }
+
+    [Theory]
+    [InlineData("page=0")]
+    [InlineData("pageSize=0")]
+    [InlineData("pageSize=101")]
+    [InlineData("sort=priority")]
+    [InlineData("isCompleted=maybe")]
+    public async Task GetAll_InvalidQuery_Returns400(string queryString)
+    {
+        var response = await _client.GetAsync($"/api/tasks?{queryString}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]

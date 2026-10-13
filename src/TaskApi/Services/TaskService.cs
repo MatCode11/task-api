@@ -14,13 +14,55 @@ public sealed class TaskService : ITaskService
         _db = db;
     }
 
-    public async Task<IReadOnlyList<TaskDto>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<PagedResult<TaskDto>> GetPageAsync(TaskQuery query, CancellationToken cancellationToken)
     {
-        return await _db.Tasks
-            .AsNoTracking()
-            .OrderBy(t => t.Id)
+        var tasks = _db.Tasks.AsNoTracking();
+
+        if (query.IsCompleted is bool isCompleted)
+        {
+            tasks = tasks.Where(t => t.IsCompleted == isCompleted);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            // Escape LIKE wildcards so the search text is matched literally.
+            var pattern = "%" + query.Search.Trim()
+                .Replace("\\", "\\\\")
+                .Replace("%", "\\%")
+                .Replace("_", "\\_") + "%";
+            tasks = tasks.Where(t =>
+                EF.Functions.Like(t.Title, pattern, "\\") ||
+                (t.Description != null && EF.Functions.Like(t.Description, pattern, "\\")));
+        }
+
+        var totalCount = await tasks.CountAsync(cancellationToken);
+
+        var items = await ApplySort(tasks, query.Sort)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .Select(t => new TaskDto(t.Id, t.Title, t.Description, t.IsCompleted, t.CreatedAt, t.UpdatedAt))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<TaskDto>(items, query.Page, query.PageSize, totalCount);
+    }
+
+    private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, string? sort)
+    {
+        var descending = sort?.StartsWith('-') == true;
+        var field = sort?.TrimStart('-').ToLowerInvariant();
+
+        // Id is the tiebreaker so paging is stable when the sort field has duplicates.
+        return (field, descending) switch
+        {
+            ("title", false) => tasks.OrderBy(t => t.Title).ThenBy(t => t.Id),
+            ("title", true) => tasks.OrderByDescending(t => t.Title).ThenByDescending(t => t.Id),
+            ("createdat", false) => tasks.OrderBy(t => t.CreatedAt).ThenBy(t => t.Id),
+            ("createdat", true) => tasks.OrderByDescending(t => t.CreatedAt).ThenByDescending(t => t.Id),
+            ("updatedat", false) => tasks.OrderBy(t => t.UpdatedAt).ThenBy(t => t.Id),
+            ("updatedat", true) => tasks.OrderByDescending(t => t.UpdatedAt).ThenByDescending(t => t.Id),
+            (_, true) => tasks.OrderByDescending(t => t.Id),
+            _ => tasks.OrderBy(t => t.Id)
+        };
     }
 
     public async Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken)

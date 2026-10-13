@@ -100,7 +100,7 @@ public sealed class ErrorResponseTests : IAsyncLifetime
     {
         private static Exception Boom() => new InvalidOperationException("Boom");
 
-        public Task<IReadOnlyList<TaskDto>> GetAllAsync(CancellationToken cancellationToken) => throw Boom();
+        public Task<PagedResult<TaskDto>> GetPageAsync(TaskQuery query, CancellationToken cancellationToken) => throw Boom();
         public Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken) => throw Boom();
         public Task<TaskDto> CreateAsync(CreateTaskDto dto, CancellationToken cancellationToken) => throw Boom();
         public Task<TaskDto?> UpdateAsync(int id, UpdateTaskDto dto, CancellationToken cancellationToken) => throw Boom();

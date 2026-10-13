@@ -16,10 +16,10 @@ public sealed class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<TaskDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<TaskDto>>> GetAll([FromQuery] TaskQuery query, CancellationToken cancellationToken)
     {
-        var items = await _tasks.GetAllAsync(cancellationToken);
-        return Ok(items);
+        var page = await _tasks.GetPageAsync(query, cancellationToken);
+        return Ok(page);
     }
 
     [HttpGet("{id:int}")]

@@ -80,6 +80,72 @@ public sealed class TaskServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetPageAsync_FiltersByCompletion()
+    {
+        var done = await _service.CreateAsync(new CreateTaskDto("Done", null), CancellationToken.None);
+        await _service.UpdateAsync(done.Id, new UpdateTaskDto("Done", null, true), CancellationToken.None);
+        await _service.CreateAsync(new CreateTaskDto("Open", null), CancellationToken.None);
+
+        var page = await _service.GetPageAsync(new TaskQuery { IsCompleted = true }, CancellationToken.None);
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal("Done", Assert.Single(page.Items).Title);
+    }
+
+    [Fact]
+    public async Task GetPageAsync_SearchMatchesTitleOrDescriptionCaseInsensitively()
+    {
+        await _service.CreateAsync(new CreateTaskDto("Build API", null), CancellationToken.None);
+        await _service.CreateAsync(new CreateTaskDto("Other", "uses the api"), CancellationToken.None);
+        await _service.CreateAsync(new CreateTaskDto("Unrelated", null), CancellationToken.None);
+
+        var page = await _service.GetPageAsync(new TaskQuery { Search = "Api" }, CancellationToken.None);
+
+        Assert.Equal(2, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPageAsync_SearchTreatsWildcardsLiterally()
+    {
+        await _service.CreateAsync(new CreateTaskDto("100% done", null), CancellationToken.None);
+        await _service.CreateAsync(new CreateTaskDto("Anything", null), CancellationToken.None);
+
+        var percent = await _service.GetPageAsync(new TaskQuery { Search = "%" }, CancellationToken.None);
+        var underscore = await _service.GetPageAsync(new TaskQuery { Search = "_" }, CancellationToken.None);
+
+        Assert.Equal("100% done", Assert.Single(percent.Items).Title);
+        Assert.Empty(underscore.Items);
+    }
+
+    [Theory]
+    [InlineData("title", new[] { "a", "b", "c" })]
+    [InlineData("-title", new[] { "c", "b", "a" })]
+    [InlineData("-id", new[] { "a", "c", "b" })]
+    [InlineData(null, new[] { "b", "c", "a" })]
+    public async Task GetPageAsync_Sorts(string? sort, string[] expected)
+    {
+        foreach (var title in new[] { "b", "c", "a" })
+        {
+            await _service.CreateAsync(new CreateTaskDto(title, null), CancellationToken.None);
+        }
+
+        var page = await _service.GetPageAsync(new TaskQuery { Sort = sort }, CancellationToken.None);
+
+        Assert.Equal(expected, page.Items.Select(t => t.Title));
+    }
+
+    [Fact]
+    public async Task GetPageAsync_PageBeyondEndIsEmptyButKeepsTotal()
+    {
+        await _service.CreateAsync(new CreateTaskDto("Only", null), CancellationToken.None);
+
+        var page = await _service.GetPageAsync(new TaskQuery { Page = 3, PageSize = 10 }, CancellationToken.None);
+
+        Assert.Empty(page.Items);
+        Assert.Equal(1, page.TotalCount);
+    }
+
+    [Fact]
     public async Task Dates_AreReturnedAsUtc()
     {
         var created = await _service.CreateAsync(new CreateTaskDto("Utc", null), CancellationToken.None);
