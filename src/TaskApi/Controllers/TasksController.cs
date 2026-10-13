@@ -32,11 +32,6 @@ public sealed class TasksController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TaskDto>> Create([FromBody] CreateTaskDto dto, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.Title))
-        {
-            return BadRequest(new { error = "Title is required." });
-        }
-
         var created = await _tasks.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
@@ -44,11 +39,6 @@ public sealed class TasksController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<TaskDto>> Update(int id, [FromBody] UpdateTaskDto dto, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.Title))
-        {
-            return BadRequest(new { error = "Title is required." });
-        }
-
         var updated = await _tasks.UpdateAsync(id, dto, cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }

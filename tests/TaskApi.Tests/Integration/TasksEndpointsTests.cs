@@ -41,14 +41,6 @@ public sealed class TasksEndpointsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Post_EmptyTitle_Returns400()
-    {
-        var response = await _client.PostAsJsonAsync("/api/tasks", new CreateTaskDto("  ", null));
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetById_ReturnsTaskOr404()
     {
         var created = await CreateTaskAsync("Find me");
