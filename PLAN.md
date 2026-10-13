@@ -70,13 +70,13 @@ Why move to `src/`: the web project currently sits at the repo root. By default 
 - Index on (UserId, IsCompleted) in M7 for filtered lists.
 
 ## Milestones
-- [ ] **M1 — Upgrade and tidy:** project targets net10.0 and EF Core 10, lives in `src/TaskApi`, `global.json` pins SDK 10, README has run instructions. Demo: `dotnet run --project src/TaskApi`, then all requests in `TaskApi.http` still work.
-- [ ] **M2 — Real database:** swap InMemory for SQLite, add the first migration (`InitialCreate`), and move seeding out of `EnsureCreated` so migrations own the schema. Connection string goes in `appsettings.json`. Demo: create a task, restart the app, and the task is still there. `dotnet ef migrations list` shows the migration.
-- [ ] **M3 — Tests:** add `tests/TaskApi.Tests`. Unit tests for `TaskService` use a SQLite in-memory connection. Integration tests cover each endpoint through `WebApplicationFactory` (happy path, 404, current 400 on empty title). Demo: `dotnet test` is green.
-- [ ] **M4 — Validation and errors:** DataAnnotations on the DTOs (required, max lengths matching the DB). Remove the manual title checks from the controller. All errors return ProblemDetails, including 404s and unhandled exceptions via `IExceptionHandler` (no stack traces outside Development). Demo: invalid POST returns a 400 ProblemDetails with field errors. Tests updated.
-- [ ] **M5 — Pagination, filtering, sorting:** `GET /api/tasks?page=1&pageSize=20&isCompleted=false&search=api&sort=-createdAt` returns `{ items, page, pageSize, totalCount }`, with pageSize capped (e.g. 100). Demo: run it from `TaskApi.http`. Tests cover the edge cases.
-- [ ] **M6 — Logging and health:** inject `ILogger<T>` into the service and log create/update/delete with structured properties (`{TaskId}`). Add HTTP request logging and a `/health` endpoint that checks the DB. Demo: the console shows structured logs and `/health` returns Healthy.
-- [ ] **M7 — Auth and ownership:** Identity API endpoints (`/register`, `/login`). Task endpoints require auth, and a user only sees and edits their own tasks (another user's task returns 404). Migration adds the user tables and `UserId`. Demo: register two users in `TaskApi.http` and show that each sees only their own tasks. Tests cover auth.
+- [x] **M1 — Upgrade and tidy:** project targets net10.0 and EF Core 10, lives in `src/TaskApi`, `global.json` pins SDK 10, README has run instructions. Demo: `dotnet run --project src/TaskApi`, then all requests in `TaskApi.http` still work.
+- [x] **M2 — Real database:** swap InMemory for SQLite, add the first migration (`InitialCreate`), and move seeding out of `EnsureCreated` so migrations own the schema. Connection string goes in `appsettings.json`. Demo: create a task, restart the app, and the task is still there. `dotnet ef migrations list` shows the migration.
+- [x] **M3 — Tests:** add `tests/TaskApi.Tests`. Unit tests for `TaskService` use a SQLite in-memory connection. Integration tests cover each endpoint through `WebApplicationFactory` (happy path, 404, current 400 on empty title). Demo: `dotnet test` is green.
+- [x] **M4 — Validation and errors:** DataAnnotations on the DTOs (required, max lengths matching the DB). Remove the manual title checks from the controller. All errors return ProblemDetails, including 404s and unhandled exceptions via `IExceptionHandler` (no stack traces outside Development). Demo: invalid POST returns a 400 ProblemDetails with field errors. Tests updated.
+- [x] **M5 — Pagination, filtering, sorting:** `GET /api/tasks?page=1&pageSize=20&isCompleted=false&search=api&sort=-createdAt` returns `{ items, page, pageSize, totalCount }`, with pageSize capped (e.g. 100). Demo: run it from `TaskApi.http`. Tests cover the edge cases.
+- [x] **M6 — Logging and health:** inject `ILogger<T>` into the service and log create/update/delete with structured properties (`{TaskId}`). Add HTTP request logging and a `/health` endpoint that checks the DB. Demo: the console shows structured logs and `/health` returns Healthy.
+- [x] **M7 — Auth and ownership:** Identity API endpoints (`/register`, `/login`). Task endpoints require auth, and a user only sees and edits their own tasks (another user's task returns 404). Migration adds the user tables and `UserId`. Demo: register two users in `TaskApi.http` and show that each sees only their own tasks. Tests cover auth.
 
 ## Features
 (feature-designer adds links to specs here)
@@ -87,8 +87,8 @@ Why move to `src/`: the web project currently sits at the repo root. By default 
 - Seeding: decide in M2 between `HasData` (part of migrations) and a Development-only seeder at startup. The recommendation is a dev-only seeder, so tests start from an empty DB.
 - SQLite limits: there is no real `DateTimeOffset` ordering and some ALTERs force a table rebuild. This is fine for learning. Revisit when moving to PostgreSQL.
 - M7 changes every task query to be filtered by user. Doing M3 (tests) first makes that change safe.
-- Open: does the user want Identity endpoints (recommended) or to hand-write JWT issuing as the learning exercise?
-- Open: add Scalar for a browser UI over the OpenAPI doc, or keep using `TaskApi.http`?
+- Decided (2026-10-13): Identity API endpoints for auth (hand-written JWT stays in Later); no Scalar for now, keep `TaskApi.http`; Development-only startup step applies migrations (no sample tasks, since tasks need an owner).
 
 ## Progress log
 - 2026-10-13: Plan created. Existing state: CRUD controller, async service layer with DTOs, EF Core InMemory with two seeded tasks, OpenAPI on net9.0.
+- 2026-10-13: M1–M7 done on branch `feature/build-out` (one commit per milestone). .NET 10 in `src/TaskApi`; SQLite with `InitialCreate` and `AddIdentityAndTaskOwner` migrations; 43 xUnit tests (unit + integration); DataAnnotations validation and ProblemDetails for all errors; paging/filter/search/sort on `GET /api/tasks`; structured + HTTP logging and `/health`; Identity bearer auth under `/api/auth` with per-user tasks. Note: `AddIdentityAndTaskOwner` deletes tasks created before auth (they had no owner).
