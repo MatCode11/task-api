@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TaskApi.Models;
 
 namespace TaskApi.Data;
 
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext : IdentityDbContext<AppUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -13,6 +14,9 @@ public sealed class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Configures the Identity tables (AspNetUsers, AspNetRoles, ...).
+        base.OnModelCreating(modelBuilder);
+
         var task = modelBuilder.Entity<TaskItem>();
 
         task.HasKey(t => t.Id);
@@ -25,6 +29,11 @@ public sealed class AppDbContext : DbContext
         task.Property(t => t.UpdatedAt)
             .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
 
-        base.OnModelCreating(modelBuilder);
+        task.HasOne(t => t.User)
+            .WithMany(u => u.Tasks)
+            .HasForeignKey(t => t.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        task.HasIndex(t => new { t.UserId, t.IsCompleted });
     }
 }

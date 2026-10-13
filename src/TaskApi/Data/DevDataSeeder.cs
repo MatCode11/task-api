@@ -1,27 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using TaskApi.Models;
 
 namespace TaskApi.Data;
 
 public static class DevDataSeeder
 {
-    // Development only: apply pending migrations and add sample tasks to an empty database.
+    // Development only: apply pending migrations at startup.
+    // Tasks belong to users, so there is no sample data; register a user to start (see TaskApi.http).
     public static async Task SeedAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         await db.Database.MigrateAsync();
-
-        if (await db.Tasks.AnyAsync())
-        {
-            return;
-        }
-
-        db.Tasks.AddRange(
-            new TaskItem { Title = "Learn ASP.NET Core", CreatedAt = DateTime.UtcNow },
-            new TaskItem { Title = "Build a simple API", CreatedAt = DateTime.UtcNow }
-        );
-        await db.SaveChangesAsync();
     }
 }

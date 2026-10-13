@@ -9,7 +9,11 @@ public sealed class TasksEndpointsTests : IAsyncLifetime
     private readonly TaskApiFactory _factory = new();
     private HttpClient _client = null!;
 
-    public async Task InitializeAsync() => _client = await _factory.CreateClientWithDatabaseAsync();
+    public async Task InitializeAsync()
+    {
+        await _factory.CreateClientWithDatabaseAsync();
+        _client = await _factory.CreateAuthenticatedClientAsync("alice@example.com");
+    }
 
     public async Task DisposeAsync() => await _factory.DisposeAsync();
 

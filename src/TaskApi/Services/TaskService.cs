@@ -16,9 +16,9 @@ public sealed class TaskService : ITaskService
         _logger = logger;
     }
 
-    public async Task<PagedResult<TaskDto>> GetPageAsync(TaskQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<TaskDto>> GetPageAsync(string userId, TaskQuery query, CancellationToken cancellationToken)
     {
-        var tasks = _db.Tasks.AsNoTracking();
+        var tasks = _db.Tasks.AsNoTracking().Where(t => t.UserId == userId);
 
         if (query.IsCompleted is bool isCompleted)
         {
@@ -67,16 +67,16 @@ public sealed class TaskService : ITaskService
         };
     }
 
-    public async Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<TaskDto?> GetByIdAsync(string userId, int id, CancellationToken cancellationToken)
     {
         return await _db.Tasks
             .AsNoTracking()
-            .Where(t => t.Id == id)
+            .Where(t => t.Id == id && t.UserId == userId)
             .Select(t => new TaskDto(t.Id, t.Title, t.Description, t.IsCompleted, t.CreatedAt, t.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<TaskDto> CreateAsync(CreateTaskDto dto, CancellationToken cancellationToken)
+    public async Task<TaskDto> CreateAsync(string userId, CreateTaskDto dto, CancellationToken cancellationToken)
     {
         var entity = new TaskItem
         {
@@ -84,19 +84,20 @@ public sealed class TaskService : ITaskService
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
             IsCompleted = false,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = null
+            UpdatedAt = null,
+            UserId = userId
         };
 
         _db.Tasks.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Created task {TaskId}", entity.Id);
+        _logger.LogInformation("Created task {TaskId} for user {UserId}", entity.Id, userId);
 
         return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
     }
 
-    public async Task<TaskDto?> UpdateAsync(int id, UpdateTaskDto dto, CancellationToken cancellationToken)
+    public async Task<TaskDto?> UpdateAsync(string userId, int id, UpdateTaskDto dto, CancellationToken cancellationToken)
     {
-        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, cancellationToken);
         if (entity is null)
         {
             return null;
@@ -113,9 +114,9 @@ public sealed class TaskService : ITaskService
         return new TaskDto(entity.Id, entity.Title, entity.Description, entity.IsCompleted, entity.CreatedAt, entity.UpdatedAt);
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(string userId, int id, CancellationToken cancellationToken)
     {
-        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var entity = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, cancellationToken);
         if (entity is null)
         {
             return false;

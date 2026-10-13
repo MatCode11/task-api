@@ -14,7 +14,11 @@ public sealed class ErrorResponseTests : IAsyncLifetime
     private readonly TaskApiFactory _factory = new();
     private HttpClient _client = null!;
 
-    public async Task InitializeAsync() => _client = await _factory.CreateClientWithDatabaseAsync();
+    public async Task InitializeAsync()
+    {
+        await _factory.CreateClientWithDatabaseAsync();
+        _client = await _factory.CreateAuthenticatedClientAsync("alice@example.com");
+    }
 
     public async Task DisposeAsync() => await _factory.DisposeAsync();
 
@@ -82,10 +86,10 @@ public sealed class ErrorResponseTests : IAsyncLifetime
     [Fact]
     public async Task UnhandledException_Returns500ProblemDetailsWithoutStackTrace()
     {
-        using var client = _factory
+        using var client = await _factory
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddScoped<ITaskService, ThrowingTaskService>()))
-            .CreateClient();
+            .CreateAuthenticatedClientAsync("bob@example.com");
 
         var response = await client.GetAsync("/api/tasks/1");
 
@@ -100,10 +104,10 @@ public sealed class ErrorResponseTests : IAsyncLifetime
     {
         private static Exception Boom() => new InvalidOperationException("Boom");
 
-        public Task<PagedResult<TaskDto>> GetPageAsync(TaskQuery query, CancellationToken cancellationToken) => throw Boom();
-        public Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken) => throw Boom();
-        public Task<TaskDto> CreateAsync(CreateTaskDto dto, CancellationToken cancellationToken) => throw Boom();
-        public Task<TaskDto?> UpdateAsync(int id, UpdateTaskDto dto, CancellationToken cancellationToken) => throw Boom();
-        public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken) => throw Boom();
+        public Task<PagedResult<TaskDto>> GetPageAsync(string userId, TaskQuery query, CancellationToken cancellationToken) => throw Boom();
+        public Task<TaskDto?> GetByIdAsync(string userId, int id, CancellationToken cancellationToken) => throw Boom();
+        public Task<TaskDto> CreateAsync(string userId, CreateTaskDto dto, CancellationToken cancellationToken) => throw Boom();
+        public Task<TaskDto?> UpdateAsync(string userId, int id, UpdateTaskDto dto, CancellationToken cancellationToken) => throw Boom();
+        public Task<bool> DeleteAsync(string userId, int id, CancellationToken cancellationToken) => throw Boom();
     }
 }
