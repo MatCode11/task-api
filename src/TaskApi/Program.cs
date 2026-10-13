@@ -42,7 +42,7 @@ app.UseStatusCodePages();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    await DevDataSeeder.SeedAsync(app.Services);
+    await DevDatabase.MigrateAsync(app.Services);
 }
 
 app.UseHttpsRedirection();
